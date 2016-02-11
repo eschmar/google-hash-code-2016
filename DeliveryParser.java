@@ -22,6 +22,7 @@ public class DeliveryParser {
     private Order orders[];
 
     private Drone drones[];
+    private int processingDrone = 0;
     private boolean doneFlag = false;
 
     private FileWriter out;
@@ -39,8 +40,8 @@ public class DeliveryParser {
 
     public void run() {
         // CALC
-        for (Drone drone : this.drones) {
-            processDrone(drone);
+        for (Order order : this.orders) {
+            processOrder(order);
         }
 
 
@@ -180,55 +181,124 @@ public class DeliveryParser {
         return solution;
     }
 
-    private void processDrone(Drone drone) {
-        Order order = this.orders[currentOrder];
-        boolean currentDroneDone = false;
-
-        while (!doneFlag && !currentDroneDone) {
 
 
-            while (order.isDone) {
-                order = this.orders[++currentOrder];
+    private Warehouse getClosestWarehouseForProd(Order o, int prod) {
+        Warehouse solution = null;
+        int distance = 0, currentDistance;
+
+        for (Warehouse current : this.warehouses) {
+            if (hasProduct(current, prod)) {
+                currentDistance = distance(current, o);
+
+                if (distance == 0 || currentDistance < distance) {
+                    solution = current;
+                    distance = currentDistance;
+                }
+            }
+        }
+
+        return solution;
+    }
+
+
+    private boolean hasProduct(Warehouse w, int prod) {
+        if (w.inventory[prod] > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+
+
+    private void processOrder(Order order) {
+        Drone drone = this.drones[processingDrone];
+
+        Warehouse closest;
+        int distToWarehouse = 0;
+        int distToOrder = 0;
+
+        for (int product : order.items) {
+            closest = getClosestWarehouseForProd(order, product);
+
+            if (closest == null) {
+                continue;
             }
 
-            Warehouse closest = getClosestWarehouse(order);
-            int distance = distance(closest, order);
+            distToWarehouse = distance(closest, drone);
+            distToOrder = distance(closest, order);
 
-            int distToWarehouse = 0;
-            int distToOrder = 0;
-
-            int t = 0;
-            for (int product : order.items) {
-                distToWarehouse = distance(closest, drone);
-                distToOrder = distance(closest, order);
-
-                // skip delivered products
-                if (product == -1) {
-                    t++;
-                    continue;
-                }
-
-                if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-                    currentDroneDone = true;
+            while (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
+                if (processingDrone == this.drones.length - 1) {
                     break;
                 }
 
-                drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-                drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-                this.commandCounter += 2;
-                order.items[t] = -1;
-                product = -1;
+                processingDrone++;
+                drone = this.drones[processingDrone];
+                distToWarehouse = distance(closest, drone);
+                distToOrder = distance(closest, order);
             }
 
-            boolean checkDone = true;
-            for (int p : order.items) {
-                if (p != -1) {checkDone = false;}
-            }
-
-            order.isDone = checkDone;
-            if (currentOrder == this.orderCount - 1 && checkDone == true) {
-                doneFlag = true;
-            }
+            drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
+            closest.inventory[product]--;
+            drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
+            this.commandCounter += 2;
         }
+
+        order.isDone = true;
     }
+
+//    private void processDrone(Drone drone) {
+//        Order order = this.orders[currentOrder];
+//        boolean currentDroneDone = false;
+//
+//        while (!doneFlag && !currentDroneDone) {
+//
+//
+//            while (order.isDone) {
+//                order = this.orders[++currentOrder];
+//            }
+//
+//            Warehouse closest = getClosestWarehouse(order);
+//            int distance = distance(closest, order);
+//
+//            int distToWarehouse = 0;
+//            int distToOrder = 0;
+//
+//            int t = 0;
+//            for (int product : order.items) {
+//                distToWarehouse = distance(closest, drone);
+//                distToOrder = distance(closest, order);
+//
+//                // skip delivered products
+//                if (product == -1) {
+//                    t++;
+//                    continue;
+//                }
+//
+//                if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
+//                    currentDroneDone = true;
+//                    break;
+//                }
+//
+//                drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
+//                drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
+//                this.commandCounter += 2;
+//                order.items[t] = -1;
+//                product = -1;
+//            }
+//
+//            boolean checkDone = true;
+//            for (int p : order.items) {
+//                if (p != -1) {checkDone = false;}
+//            }
+//
+//            order.isDone = checkDone;
+//            if (currentOrder == this.orderCount - 1 && checkDone == true) {
+//                doneFlag = true;
+//            }
+//        }
+//    }
 }
