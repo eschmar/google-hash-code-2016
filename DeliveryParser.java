@@ -17,17 +17,17 @@ public class DeliveryParser {
     private int warehouseCount;
     private Warehouse warehouses[];
 
-    private int orderCount;
+    private int orderCount, currentOrder = 0;
     private Order orders[];
 
     private Drone drones[];
 
     private FileWriter out;
 
-    private static final String CMD_LOAD = "LOAD";
-    private static final String CMD_DELIVER = "DELIVER";
-    private static final String CMD_WAIT = "WAIT";
-    private static final String CMD_UNLOAD = "UNLOAD";
+    private static final char CMD_LOAD = 'L';
+    private static final char CMD_DELIVER = 'D';
+    private static final char CMD_WAIT = 'W';
+    private static final char CMD_UNLOAD = 'U';
 
     public DeliveryParser(String file) {
         this.fileName = file.substring(0, file.lastIndexOf('.'));
@@ -36,12 +36,27 @@ public class DeliveryParser {
     }
 
     public void run() {
+        // CALC
+        for (Drone drone : this.drones) {
+            processDrone(drone);
+        }
+
+        // OUTPUT
         File outputFile = new File(this.fileName + ".out");
 
         try {
             this.out = new FileWriter(outputFile);
             BufferedWriter bw = new BufferedWriter(this.out);
-            this.out.write("" + this.commandCounter);
+            bw.newLine();
+
+            // write output here
+            for (Drone drone : this.drones) {
+                for (String cmd : drone.cmds) {
+                    bw.write(cmd);
+                    bw.newLine();
+                }
+            }
+
             bw.flush();
             bw.close();
 
@@ -66,12 +81,6 @@ public class DeliveryParser {
             this.turns = in.nextInt();
             this.maxPayload = in.nextInt();
 
-            // DRONES
-            this.drones = new Drone[this.droneCount];
-            for (int i = 0; i < this.droneCount; i++) {
-                this.drones[i] = new Drone(this.turns, this.maxPayload);
-            }
-
             // PRODUTCS
             this.productTypes = in.nextInt();
             this.products = new int[this.productTypes];
@@ -91,7 +100,7 @@ public class DeliveryParser {
                     tempInventory[j] = in.nextInt();
                 }
 
-                this.warehouses[i] =  new Warehouse(tempX, tempY, tempInventory);
+                this.warehouses[i] =  new Warehouse(i, tempX, tempY, tempInventory);
             }
 
             // ORDERS
@@ -107,7 +116,13 @@ public class DeliveryParser {
                     tempItems[j] = in.nextInt();
                 }
 
-                this.orders[i] =  new Order(tempX, tempY, tempAmount, tempItems);
+                this.orders[i] =  new Order(i, tempX, tempY, tempAmount, tempItems);
+            }
+
+            // DRONES
+            this.drones = new Drone[this.droneCount];
+            for (int i = 0; i < this.droneCount; i++) {
+                this.drones[i] = new Drone(this.warehouses[0], i, this.turns, this.maxPayload);
             }
 
             in.close();
@@ -118,30 +133,66 @@ public class DeliveryParser {
         }
     }
 
-//    private void parseHorizontalLines(BufferedWriter bw) {
-//        for (int i = 0; i < this.rows; i++) {
-//            int j = 0;
-//            while (j < this.cols) {
-//                if (inputArray[i][j] == CELL_PAINTED) {
-//                    int start = j;
-//                    while (j < this.cols && this.inputArray[i][j] == CELL_PAINTED) {
-//                        j++;
-//                    }
-//
-//                    j--;
-//                    this.commandCounter++;
-//
-//                    try {
-//                        bw.newLine();
-//                        bw.write(CMD_LINE + " " + i + " " + start + " " + i + " " + j);
-//                    }catch (IOException e) {
-//                        // error while writing
-//                        System.out.printf("[ERROR] " + e.getMessage());
-//                    }
-//                }
-//
-//                j++;
-//            }
-//        }
-//    }
+    private int distance(Warehouse w, Order o) {
+        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
+        return (int) Math.ceil(distance);
+    }
+
+    private int distance(Drone w, Order o) {
+        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
+        return (int) Math.ceil(distance);
+    }
+
+    private int distance(Warehouse w, Drone o) {
+        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
+        return (int) Math.ceil(distance);
+    }
+
+    private Warehouse getClosestWarehouse(Order o) {
+        Warehouse solution = this.warehouses[0];
+        int distance = 0, currentDistance;
+
+        for (Warehouse current : this.warehouses) {
+            currentDistance = distance(current, o);
+            if (distance == 0 || currentDistance < distance) {
+
+                // TODO: CHECK PRODUCT AVAILABILITY!
+
+                solution = current;
+                distance = currentDistance;
+            }
+        }
+
+        return solution;
+    }
+
+    private void processDrone(Drone drone) {
+        Order order = this.orders[currentOrder];
+
+        while (order.isDone)
+        if (order.isDone) {
+            order = this.orders[++currentOrder];
+        }
+
+        Warehouse closest = getClosestWarehouse(order);
+        int distance = distance(closest, order);
+
+        int distToWarehouse = 0;
+        int distToOrder = 0;
+        for (int product : order.items) {
+            distToWarehouse = distance(closest, drone);
+            distToOrder = distance(closest, order);
+
+            // skip delivered products
+            if (product == -1) { continue; }
+
+            if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
+                break;
+            }
+
+            drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
+            drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
+            product = -1;
+        }
+    }
 }
