@@ -41,6 +41,7 @@ public class DeliveryParser {
             processDrone(drone);
         }
 
+
         // OUTPUT
         File outputFile = new File(this.fileName + ".out");
 
@@ -100,7 +101,7 @@ public class DeliveryParser {
                     tempInventory[j] = in.nextInt();
                 }
 
-                this.warehouses[i] =  new Warehouse(i, tempX, tempY, tempInventory);
+                this.warehouses[i] = new Warehouse(i, tempX, tempY, tempInventory);
             }
 
             // ORDERS
@@ -116,7 +117,7 @@ public class DeliveryParser {
                     tempItems[j] = in.nextInt();
                 }
 
-                this.orders[i] =  new Order(i, tempX, tempY, tempAmount, tempItems);
+                this.orders[i] = new Order(i, tempX, tempY, tempAmount, tempItems);
             }
 
             // DRONES
@@ -170,9 +171,9 @@ public class DeliveryParser {
         Order order = this.orders[currentOrder];
 
         while (order.isDone)
-        if (order.isDone) {
-            order = this.orders[++currentOrder];
-        }
+            if (order.isDone) {
+                order = this.orders[++currentOrder];
+            }
 
         Warehouse closest = getClosestWarehouse(order);
         int distance = distance(closest, order);
@@ -184,7 +185,9 @@ public class DeliveryParser {
             distToOrder = distance(closest, order);
 
             // skip delivered products
-            if (product == -1) { continue; }
+            if (product == -1) {
+                continue;
+            }
 
             if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
                 break;
@@ -192,6 +195,7 @@ public class DeliveryParser {
 
             drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
             drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
+            this.commandCounter += 2;
             product = -1;
         }
     }

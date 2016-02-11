@@ -20,6 +20,7 @@ public class Drone {
         this.time = time;
         this.payload = 0;
         this.maxPayload = maxPayload;
+        this.cmds = new ArrayList<String>();
     }
 
     public void addLoadCommand(Warehouse w, int val1, int val2, int distance, int newX, int newY) {
