@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -66,7 +67,13 @@ public class DeliveryParser {
             System.out.printf("[ERROR] " + e.getMessage());
         }
 
+        int processedOrders = 0;
+        for (Order o : this.orders) {
+            if (o.isDone) {processedOrders++;}
+        }
+
         System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
+        System.out.println("Processed orders: " + processedOrders);
         System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
     }
 
@@ -132,6 +139,11 @@ public class DeliveryParser {
             // file not found.
             System.out.printf("[ERROR] " + e.getMessage());
         }
+
+//        int t[] = this.orders[0].items;
+//        for (int i : t) {
+//            System.out.print(", " + i);
+//        }
     }
 
     private int distance(Warehouse w, Order o) {
@@ -169,34 +181,46 @@ public class DeliveryParser {
 
     private void processDrone(Drone drone) {
         Order order = this.orders[currentOrder];
+        boolean doneFlag = false;
 
-        while (order.isDone)
-            if (order.isDone) {
-                order = this.orders[++currentOrder];
+        while (!doneFlag) {
+            while (order.isDone) {
+                if (currentOrder == this.orderCount - 1) {
+                    doneFlag = true;
+                    break;
+                }
+                else if (order.isDone) {
+                    order = this.orders[++currentOrder];
+                }
             }
 
-        Warehouse closest = getClosestWarehouse(order);
-        int distance = distance(closest, order);
 
-        int distToWarehouse = 0;
-        int distToOrder = 0;
-        for (int product : order.items) {
-            distToWarehouse = distance(closest, drone);
-            distToOrder = distance(closest, order);
+            Warehouse closest = getClosestWarehouse(order);
+            int distance = distance(closest, order);
 
-            // skip delivered products
-            if (product == -1) {
-                continue;
+            int distToWarehouse = 0;
+            int distToOrder = 0;
+            for (int product : order.items) {
+                distToWarehouse = distance(closest, drone);
+                distToOrder = distance(closest, order);
+
+                // skip delivered products
+                if (product == -1) {
+                    continue;
+                }
+
+                if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
+                    doneFlag = true;
+                    break;
+                }
+
+                drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
+                drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
+                this.commandCounter += 2;
+                product = -1;
             }
 
-            if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-                break;
-            }
-
-            drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-            drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-            this.commandCounter += 2;
-            product = -1;
+            order.isDone = true;
         }
     }
 }
