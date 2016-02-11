@@ -51,7 +51,7 @@ public class DeliveryParser {
         }
 
         System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
-        System.out.println("\nDimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
+        System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
     }
 
     private void readInput() {
@@ -103,7 +103,7 @@ public class DeliveryParser {
                 tempY = in.nextInt();
                 tempAmount = in.nextInt();
                 tempItems = new int[tempAmount];
-                for (int j = 0; j < this.productTypes; j++) {
+                for (int j = 0; j < tempAmount; j++) {
                     tempItems[j] = in.nextInt();
                 }
 
