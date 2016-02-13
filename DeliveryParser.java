@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.Stack;
 
@@ -65,6 +66,7 @@ public class DeliveryParser {
      * Calculate simulation
      */
     public void run() {
+        Arrays.sort(orders); // Sort the array of orders according to distance from origin
         for (Order order : this.orders) {
             processOrder(order);
         }
@@ -110,7 +112,7 @@ public class DeliveryParser {
             // ORDERS
             this.orderCount = in.nextInt();
             this.orders = new Order[this.orderCount];
-            int tempAmount, tempItems[];
+            int tempAmount, tempItems[], tempDistOrigin;
             for (int i = 0; i < this.orderCount; i++) {
                 tempX = in.nextInt();
                 tempY = in.nextInt();
@@ -119,8 +121,8 @@ public class DeliveryParser {
                 for (int j = 0; j < tempAmount; j++) {
                     tempItems[j] = in.nextInt();
                 }
-
-                this.orders[i] = new Order(i, tempX, tempY, tempAmount, tempItems);
+                tempDistOrigin = distOrigin(tempX, tempY, warehouses[0]);
+                this.orders[i] = new Order(i, tempX, tempY, tempAmount, tempItems, tempDistOrigin);
             }
 
             // DRONES
@@ -304,5 +306,17 @@ public class DeliveryParser {
         }
 
         return solution;
+    }
+
+    /**
+     * Compute the distance between an order and the origin warehouse
+     * @param orderX
+     * @param orderY
+     * @param originWarehouse
+     * @return
+     */
+    private int distOrigin(int orderX, int orderY, Warehouse originWarehouse) {
+        double distance = Math.sqrt(Math.pow((orderX - originWarehouse.x), 2) + Math.pow(orderY - originWarehouse.y, 2));
+        return (int) Math.ceil(distance);
     }
 }
