@@ -214,6 +214,7 @@ public class DeliveryParser {
             partial = new Stack<Integer>();
             partial.push(prodId);
             payload -= this.products[prodId];
+            warehouse.inventory[prodId]--;
             order.items[prod] = -1;
             itemsToDeliver--;
 
@@ -237,10 +238,16 @@ public class DeliveryParser {
             }
 
             if (!this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
+                // this should never happen
                 break;
             }
 
-            this.commandCounter += this.drones[currentDrone].load(warehouse, partial);
+            for (int item : partial) {
+                this.drones[currentDrone].load(warehouse, item);
+                this.commandCounter++;
+                warehouse.inventory[item]--;
+            }
+
             this.drones[currentDrone].move(warehouse);
 
             // deliver

@@ -25,28 +25,10 @@ public class Drone extends Location {
         this.loaded = new Stack<Integer>();
     }
 
-//    public void addLoadCommand(Warehouse w, int val1, int val2, int distance, int newX, int newY) {
-//        cmds.add(this.number + " " + CMD_LOAD + " " + w.number + " " + val1 + " " + val2);
-//        this.time--;
-//    }
-//
-//    public void addDeliverCommand(Order o, int val1, int val2, int distance, int newX, int newY) {
-//        cmds.add(this.number + " " + CMD_DELIVER + " " + o.number + " " + val1 + " " + val2);
-//        this.time--;
-//    }
-
-
-
-
-    public int load(Warehouse w, Stack<Integer> load) {
-        this.loaded = load;
-        for (Integer product : this.loaded) {
-            cmds.add(this.number + " " + CMD_LOAD + " " + w.number + " " + product + " " + 1);
-            w.inventory[product]--;
-            this.time--;
-        }
-
-        return this.loaded.size();
+    public void load(Warehouse w, int product) {
+        loaded.push(product);
+        cmds.add(this.number + " " + CMD_LOAD + " " + w.number + " " + product + " " + 1);
+        this.time--;
     }
 
     public int deliver(Order order) {
@@ -59,6 +41,7 @@ public class Drone extends Location {
             commands++;
         }
 
+        this.loaded.removeAllElements();
         return commands;
     }
 
