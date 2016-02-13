@@ -238,11 +238,11 @@ public class DeliveryParser {
                 }
             }
 
-            // load partial to next available drone
-            int tries = droneCount;
-            while (tries > 0 && !this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
-                tries--;
-                this.alternateDrones();
+            // find closest drone to warehouse
+            for (int i = 0; i < this.droneCount; i++) {
+                if (this.drones[i].canDeliver(warehouse, order, partial) && warehouse.distanceTo(this.drones[i]) < warehouse.distanceTo(this.drones[currentDrone])) {
+                    this.currentDrone = i;
+                }
             }
 
             if (!this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
@@ -250,6 +250,7 @@ public class DeliveryParser {
                 break;
             }
 
+            // load partial to drone
             for (int item : partial) {
                 this.drones[currentDrone].load(warehouse, item);
                 this.commandCounter++;
