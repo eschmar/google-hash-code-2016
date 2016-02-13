@@ -26,7 +26,7 @@ public class DeliveryParser {
     private int warehouseCount;
     private Warehouse warehouses[];
 
-    private int orderCount;
+    private int orderCount, orderDoneCount;
     private Order orders[];
 
     private int droneCount, currentDrone = 0;
@@ -41,6 +41,7 @@ public class DeliveryParser {
             processingDrone = 0;
 
     private boolean doneFlag = false;
+    private int radius, radiusInitial;
 
 
     /**
@@ -65,8 +66,16 @@ public class DeliveryParser {
      * Calculate simulation
      */
     public void run() {
-        for (Order order : this.orders) {
-            processOrder(order);
+        this.radiusInitial = (this.rows * this.cols) / 100;
+        this.radius = this.radiusInitial;
+        this.orderDoneCount = 0;
+
+        while (this.orderDoneCount != orderCount) {
+            for (Order order : this.orders) {
+                processOrder(order);
+            }
+
+            this.radius += this.radiusInitial;
         }
     }
 
@@ -197,6 +206,18 @@ public class DeliveryParser {
      * @param order
      */
     private void processOrder(Order order) {
+        if (order.isDone) { return; }
+        boolean validDrone = false;
+        for (int i = 0; i < this.droneCount; i++) {
+            if (this.drones[i].distanceTo(order) < radius) {
+                validDrone = true;
+                break;
+            }
+        }
+
+        if (!validDrone) { return; }
+
+
         Stack<Integer> partial;
         int itemsToDeliver = order.items.length;
         int prod = 0, prodId, payload = this.maxPayload;
@@ -280,6 +301,7 @@ public class DeliveryParser {
         }
 
         order.isDone = true;
+        this.orderDoneCount++;
     }
 
     /**
