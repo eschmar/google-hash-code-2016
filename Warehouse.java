@@ -1,5 +1,8 @@
 /**
- * Created by eschmar on 11/02/16.
+ * Warehouse
+ *
+ * Google HashCode 2016
+ * Created by Marcel Eschmann and Simone Stefani on 09/02/16.
  */
 public class Warehouse extends Location {
     public int number, inventory[];

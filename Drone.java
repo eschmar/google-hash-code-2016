@@ -2,7 +2,10 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 /**
- * Created by eschmar on 11/02/16.
+ * Drone
+ *
+ * Google HashCode 2016
+ * Created by Marcel Eschmann and Simone Stefani on 09/02/16.
  */
 public class Drone extends Location {
     private static final char CMD_LOAD = 'L';

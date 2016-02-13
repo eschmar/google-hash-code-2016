@@ -1,5 +1,8 @@
 /**
- * Created by eschmar on 13/02/16.
+ * Location
+ *
+ * Google HashCode 2016
+ * Created by Marcel Eschmann and Simone Stefani on 13/02/16.
  */
 abstract public class Location {
     public int x, y;

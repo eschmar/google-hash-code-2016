@@ -3,7 +3,10 @@ import java.util.Scanner;
 import java.util.Stack;
 
 /**
- * Created by eschmar on 09/02/16.
+ * DeliveryParser
+ *
+ * Google HashCode 2016
+ * Created by Marcel Eschmann and Simone Stefani on 09/02/16.
  */
 public class DeliveryParser {
     /**
