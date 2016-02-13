@@ -12,6 +12,7 @@ public class Warehouse extends Location {
     }
 
     public boolean hasProduct(int prod) {
+        if (prod < 0) {return false;}
         if (this.inventory[prod] > 0) {
             return true;
         }

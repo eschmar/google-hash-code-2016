@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.Scanner;
+import java.util.Stack;
 
 /**
  * Created by eschmar on 09/02/16.
@@ -25,7 +26,7 @@ public class DeliveryParser {
     private int orderCount;
     private Order orders[];
 
-    private int droneCount;
+    private int droneCount, currentDrone = 0;
     private Drone drones[];
 
     /**
@@ -181,35 +182,91 @@ public class DeliveryParser {
         System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
     }
 
-
-
-    private Warehouse getClosestWarehouse(Order o) {
-        Warehouse solution = this.warehouses[0];
-        int distance = 0, currentDistance;
-
-        for (Warehouse current : this.warehouses) {
-            currentDistance = current.distanceTo(o);
-            if (distance == 0 || currentDistance < distance) {
-
-                // TODO: CHECK PRODUCT AVAILABILITY!
-
-                solution = current;
-                distance = currentDistance;
-            }
-        }
-
-        return solution;
+    /**
+     * Switch currently used drone to the next
+     */
+    private void alternateDrones() {
+        this.currentDrone = (this.currentDrone + 1) % this.droneCount;
     }
 
+    /**
+     * Process one order using multiple drones.
+     * @param order
+     */
+    private void processOrder(Order order) {
+        Stack<Integer> partial;
+        int itemsToDeliver = order.items.length;
+        int prod = 0, prodId, payload = this.maxPayload;
 
+        while (itemsToDeliver > 0) {
+            // chose next item
+            while (prod < order.items.length -1 && order.items[prod] == -1) {
+                prod++;
+            }
 
-    private Warehouse getClosestWarehouseForProd(Order o, int prod) {
+            prodId = order.items[prod];
+            payload = this.maxPayload;
+
+            // find closest warehouse with product
+            Warehouse warehouse = getClosestWarehouse(prodId, order);
+
+            // create partial
+            partial = new Stack<Integer>();
+            partial.push(prodId);
+            payload -= this.products[prodId];
+            order.items[prod] = -1;
+            itemsToDeliver--;
+
+            // check for other products to load in this warehouse
+            for (int i = prod+1; i < order.items.length; i++) {
+                if (order.items[i] == -1) { continue; }
+
+                if (warehouse.hasProduct(order.items[i]) && payload - this.products[i] > 0) {
+                    partial.push(order.items[i]);
+                    payload -= this.products[order.items[i]];
+                    order.items[i] = -1;
+                    itemsToDeliver--;
+                }
+            }
+
+            // load partial to next available drone
+            int tries = droneCount;
+            while (tries > 0 && !this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
+                tries--;
+                this.alternateDrones();
+            }
+
+            if (!this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
+                break;
+            }
+
+            this.commandCounter += this.drones[currentDrone].load(warehouse, partial);
+            this.drones[currentDrone].move(warehouse);
+
+            // deliver
+            this.commandCounter += this.drones[currentDrone].deliver(order);
+            this.drones[currentDrone].move(order);
+
+            // use next drone
+            alternateDrones();
+        }
+
+        order.isDone = true;
+    }
+
+    /**
+     * Find closest warehouse having a specific product in stock
+     * @param prod
+     * @param order
+     * @return
+     */
+    private Warehouse getClosestWarehouse(int prod, Order order) {
         Warehouse solution = null;
         int distance = 0, currentDistance;
 
         for (Warehouse current : this.warehouses) {
             if (current.hasProduct(prod)) {
-                currentDistance = current.distanceTo(o);
+                currentDistance = current.distanceTo(order);
 
                 if (distance == 0 || currentDistance < distance) {
                     solution = current;
@@ -219,42 +276,5 @@ public class DeliveryParser {
         }
 
         return solution;
-    }
-
-    private void processOrder(Order order) {
-        Drone drone = this.drones[processingDrone];
-
-        Warehouse closest;
-        int distToWarehouse = 0;
-        int distToOrder = 0;
-
-        for (int product : order.items) {
-            closest = getClosestWarehouseForProd(order, product);
-
-            if (closest == null) {
-                continue;
-            }
-
-            distToWarehouse = closest.distanceTo(drone);
-            distToOrder = closest.distanceTo(order);
-
-            while (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-                if (processingDrone == this.drones.length - 1) {
-                    break;
-                }
-
-                processingDrone++;
-                drone = this.drones[processingDrone];
-                distToWarehouse = closest.distanceTo(drone);
-                distToOrder = closest.distanceTo(order);
-            }
-
-            drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-            closest.inventory[product]--;
-            drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-            this.commandCounter += 2;
-        }
-
-        order.isDone = true;
     }
 }
