@@ -1,10 +1,16 @@
 import java.io.*;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
- * Created by eschmar on 09/02/16.
+ * Google HashCode 2016
+ * <p>
+ * Created by Marcel Eschmann on 09/02/16.
+ * Edited by Simone Stefani and Marcel Eschmann
  */
+
 public class DeliveryParser {
     private String fileName;
     private String fileExtension;
@@ -18,12 +24,10 @@ public class DeliveryParser {
     private int warehouseCount;
     private Warehouse warehouses[];
 
-    private int orderCount, currentOrder = 0;
+    private int orderCount;
     private Order orders[];
 
     private Drone drones[];
-    private int processingDrone = 0;
-    private boolean doneFlag = false;
 
     private FileWriter out;
 
@@ -71,7 +75,9 @@ public class DeliveryParser {
 
         int processedOrders = 0;
         for (Order o : this.orders) {
-            if (o.isDone) {processedOrders++;}
+            if (o.isDone) {
+                processedOrders++;
+            }
         }
 
         System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
@@ -85,6 +91,7 @@ public class DeliveryParser {
         try {
             Scanner in = new Scanner(inputFile);
 
+            // BASIC INFO
             this.rows = in.nextInt();
             this.cols = in.nextInt();
             this.droneCount = in.nextInt();
@@ -116,16 +123,18 @@ public class DeliveryParser {
             // ORDERS
             this.orderCount = in.nextInt();
             this.orders = new Order[this.orderCount];
-            int tempAmount, tempItems[];
+            int tempAmount;
+            Item tempItems[];
             for (int i = 0; i < this.orderCount; i++) {
                 tempX = in.nextInt();
                 tempY = in.nextInt();
                 tempAmount = in.nextInt();
-                tempItems = new int[tempAmount];
+                tempItems = new Item[tempAmount];
                 for (int j = 0; j < tempAmount; j++) {
-                    tempItems[j] = in.nextInt();
+                    int itemValue = in.nextInt();
+                    Item newItem = new Item(j, itemValue, products[itemValue]);
+                    tempItems[j] = newItem;
                 }
-
                 this.orders[i] = new Order(i, tempX, tempY, tempAmount, tempItems);
             }
 
@@ -140,11 +149,6 @@ public class DeliveryParser {
         } catch (FileNotFoundException e) {
             // file not found.
             System.out.printf("[ERROR] " + e.getMessage());
-        }
-
-        int t[] = this.orders[179].items;
-        for (int i : t) {
-            System.out.print(", " + i);
         }
     }
 
@@ -163,142 +167,95 @@ public class DeliveryParser {
         return (int) Math.ceil(distance);
     }
 
-    private Warehouse getClosestWarehouse(Order o) {
-        Warehouse solution = this.warehouses[0];
-        int distance = 0, currentDistance;
-
-        for (Warehouse current : this.warehouses) {
-            currentDistance = distance(current, o);
-            if (distance == 0 || currentDistance < distance) {
-
-                // TODO: CHECK PRODUCT AVAILABILITY!
-
-                solution = current;
-                distance = currentDistance;
-            }
-        }
-
-        return solution;
-    }
-
-
-
-    private Warehouse getClosestWarehouseForProd(Order o, int prod) {
-        Warehouse solution = null;
-        int distance = 0, currentDistance;
-
-        for (Warehouse current : this.warehouses) {
-            if (hasProduct(current, prod)) {
-                currentDistance = distance(current, o);
-
-                if (distance == 0 || currentDistance < distance) {
-                    solution = current;
-                    distance = currentDistance;
-                }
-            }
-        }
-
-        return solution;
-    }
-
-
     private boolean hasProduct(Warehouse w, int prod) {
-        if (w.inventory[prod] > 0) {
-            return true;
-        }
+        return w.inventory[prod] > 0;
 
-        return false;
     }
 
-
-
+    /*
+    private boolean orderIsDone(Order order) {
+        boolean done = false;
+        for (int product : order.items) {
+            if (product > -1) {
+                done = true;
+            }
+        }
+        return done;
+    }
+    */
 
     private void processOrder(Order order) {
-        Drone drone = this.drones[processingDrone];
+        ArrayList<Package> itemPackages = new ArrayList();
 
-        Warehouse closest;
-        int distToWarehouse = 0;
-        int distToOrder = 0;
+        for (int i = 0; i < order.items.length; i++) {
+            Item product = order.items[i];
+            int minDist = 0;
+            boolean existsHash = false;
 
-        for (int product : order.items) {
-            closest = getClosestWarehouseForProd(order, product);
-
-            if (closest == null) {
-                continue;
+            for (Drone drone : drones) {
+                for (Warehouse warehouse : warehouses) {
+                    if (hasProduct(warehouse, product.itemCode)) {
+                        int distWO = distance(warehouse, order);
+                        int distDO = distance(drone, order);
+                        int distWD = distance(warehouse, drone);
+                        if (drone.time - (distWD + 1 + distWO + 1) >= 0) {
+                            int distSum = distDO + distWD + distWO;
+                            if (distSum < minDist || minDist == 0) {
+                                product.setBestStrategy(drone, warehouse);
+                            }
+                        }
+                    }
+                }
             }
+            product.setBestDistWDandWO(distance(product.bestWarehouse, product.bestDrone), distance(product.bestWarehouse, order));
 
-            distToWarehouse = distance(closest, drone);
-            distToOrder = distance(closest, order);
+            /*
+            bestDrone.addLoadCommand(bestWarehouse, product, 1, bestDistWD, bestWarehouse.x, bestWarehouse.y);
+            bestWarehouse.inventory[product]--;
+            bestDrone.addDeliverCommand(order, product, 1, bestDistWO, order.x, order.y);
+            this.commandCounter += 2;
+            */
+            int hashCode = product.hashCode();
 
-            while (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-                if (processingDrone == this.drones.length - 1) {
+
+            for (Package pack : itemPackages) {
+                if (pack.hashCode == hashCode && (pack.weight + product.weight) <= maxPayload) {
+                    pack.addItem(product);
+                    existsHash = true;
                     break;
                 }
-
-                processingDrone++;
-                drone = this.drones[processingDrone];
-                distToWarehouse = distance(closest, drone);
-                distToOrder = distance(closest, order);
             }
+            if (!existsHash) {
+                Package newPackage = new Package(itemPackages.size(), hashCode, product);
+                itemPackages.add(newPackage);
 
-            drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-            closest.inventory[product]--;
-            drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-            this.commandCounter += 2;
+            }
+        }
+
+        for (Package pack : itemPackages) {
+            Drone baseDrone = null;
+            Warehouse baseWarehouse = null;
+            int baseDistWD = 0;
+            int baseDistWO = 0;
+
+            for (Item item : pack.items) {
+                baseDrone = item.bestDrone;
+                baseWarehouse = item.bestWarehouse;
+                baseDistWD = item.bestDistWD;
+                baseDistWO = item.bestDistWO;
+                item.bestDrone.addLoadCommand(item.bestWarehouse, item.itemCode, 1);
+                item.bestWarehouse.inventory[item.itemCode]--;
+                this.commandCounter++;
+            }
+            baseDrone.changePos(baseDistWD, baseWarehouse.x, baseWarehouse.y);
+
+            for (Item item : pack.items) {
+                item.bestDrone.addDeliverCommand(order, item.itemCode, 1);
+
+            }
+            baseDrone.changePos(baseDistWO, order.x, order.y);
         }
 
         order.isDone = true;
     }
-
-//    private void processDrone(Drone drone) {
-//        Order order = this.orders[currentOrder];
-//        boolean currentDroneDone = false;
-//
-//        while (!doneFlag && !currentDroneDone) {
-//
-//
-//            while (order.isDone) {
-//                order = this.orders[++currentOrder];
-//            }
-//
-//            Warehouse closest = getClosestWarehouse(order);
-//            int distance = distance(closest, order);
-//
-//            int distToWarehouse = 0;
-//            int distToOrder = 0;
-//
-//            int t = 0;
-//            for (int product : order.items) {
-//                distToWarehouse = distance(closest, drone);
-//                distToOrder = distance(closest, order);
-//
-//                // skip delivered products
-//                if (product == -1) {
-//                    t++;
-//                    continue;
-//                }
-//
-//                if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-//                    currentDroneDone = true;
-//                    break;
-//                }
-//
-//                drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-//                drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-//                this.commandCounter += 2;
-//                order.items[t] = -1;
-//                product = -1;
-//            }
-//
-//            boolean checkDone = true;
-//            for (int p : order.items) {
-//                if (p != -1) {checkDone = false;}
-//            }
-//
-//            order.isDone = checkDone;
-//            if (currentOrder == this.orderCount - 1 && checkDone == true) {
-//                doneFlag = true;
-//            }
-//        }
-//    }
 }

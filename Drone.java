@@ -1,8 +1,12 @@
 import java.util.ArrayList;
 
 /**
- * Created by eschmar on 11/02/16.
+ * Google HashCode 2016
+ *
+ * Created by Marcel Eschmann on 09/02/16.
+ * Edited by Simone Stefani and Marcel Eschmann
  */
+
 public class Drone {
     private static final char CMD_LOAD = 'L';
     private static final char CMD_DELIVER = 'D';
@@ -23,16 +27,18 @@ public class Drone {
         this.cmds = new ArrayList<String>();
     }
 
-    public void addLoadCommand(Warehouse w, int val1, int val2, int distance, int newX, int newY) {
+    public void addLoadCommand(Warehouse w, int val1, int val2) {
         cmds.add(this.number + " " + CMD_LOAD + " " + w.number + " " + val1 + " " + val2);
-        this.time -= distance + 1;
-        this.x = newX;
-        this.y = newY;
+        this.time--;
     }
 
-    public void addDeliverCommand(Order o, int val1, int val2, int distance, int newX, int newY) {
+    public void addDeliverCommand(Order o, int val1, int val2) {
         cmds.add(this.number + " " + CMD_DELIVER + " " + o.number + " " + val1 + " " + val2);
-        this.time -= distance + 1;
+        this.time--;
+    }
+
+    public void changePos(int distance, int newX, int newY) {
+        this.time -= distance;
         this.x = newX;
         this.y = newY;
     }
