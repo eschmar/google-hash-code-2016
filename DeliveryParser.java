@@ -221,7 +221,7 @@ public class DeliveryParser {
             for (int i = prod+1; i < order.items.length; i++) {
                 if (order.items[i] == -1) { continue; }
 
-                if (warehouse.hasProduct(order.items[i]) && payload - this.products[i] > 0) {
+                if (warehouse.hasProduct(order.items[i]) && payload - this.products[order.items[i]] > 0) {
                     partial.push(order.items[i]);
                     payload -= this.products[order.items[i]];
                     order.items[i] = -1;
