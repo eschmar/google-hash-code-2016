@@ -1,84 +1,74 @@
 import java.io.*;
-import java.util.Arrays;
 import java.util.Scanner;
 
 /**
  * Created by eschmar on 09/02/16.
  */
 public class DeliveryParser {
+    /**
+     * Input file
+     */
     private String fileName;
     private String fileExtension;
 
-    private int commandCounter = 0;
-    private int rows, cols, droneCount, turns, maxPayload;
+    /**
+     * Parsed input
+     */
+    private int rows, cols, turns, maxPayload;
 
-    private int productTypes;
+    private int productCount;
     private int products[];
 
     private int warehouseCount;
     private Warehouse warehouses[];
 
-    private int orderCount, currentOrder = 0;
+    private int orderCount;
     private Order orders[];
 
+    private int droneCount;
     private Drone drones[];
-    private int processingDrone = 0;
+
+    /**
+     * Helpers
+     */
+
+    private int commandCounter = 0,
+            currentOrder = 0,
+            processingDrone = 0;
+
     private boolean doneFlag = false;
 
-    private FileWriter out;
 
+    /**
+     * Commands
+     */
     private static final char CMD_LOAD = 'L';
     private static final char CMD_DELIVER = 'D';
     private static final char CMD_WAIT = 'W';
     private static final char CMD_UNLOAD = 'U';
 
+    /**
+     * Constructor
+     * @param file
+     */
     public DeliveryParser(String file) {
         this.fileName = file.substring(0, file.lastIndexOf('.'));
         this.fileExtension = file.substring(file.lastIndexOf('.'), file.length());
         this.readInput();
     }
 
+    /**
+     * Calculate simulation
+     */
     public void run() {
-        // CALC
         for (Order order : this.orders) {
             processOrder(order);
         }
-
-
-        // OUTPUT
-        File outputFile = new File(this.fileName + ".out");
-
-        try {
-            this.out = new FileWriter(outputFile);
-            BufferedWriter bw = new BufferedWriter(this.out);
-            bw.newLine();
-
-            // write output here
-            for (Drone drone : this.drones) {
-                for (String cmd : drone.cmds) {
-                    bw.write(cmd);
-                    bw.newLine();
-                }
-            }
-
-            bw.flush();
-            bw.close();
-
-        } catch (IOException e) {
-            // file not found.
-            System.out.printf("[ERROR] " + e.getMessage());
-        }
-
-        int processedOrders = 0;
-        for (Order o : this.orders) {
-            if (o.isDone) {processedOrders++;}
-        }
-
-        System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
-        System.out.println("Processed orders: " + processedOrders);
-        System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
     }
 
+    /**
+     * Parses input file
+     */
     private void readInput() {
         File inputFile = new File(this.fileName + this.fileExtension);
 
@@ -92,9 +82,9 @@ public class DeliveryParser {
             this.maxPayload = in.nextInt();
 
             // PRODUTCS
-            this.productTypes = in.nextInt();
-            this.products = new int[this.productTypes];
-            for (int i = 0; i < this.productTypes; i++) {
+            this.productCount = in.nextInt();
+            this.products = new int[this.productCount];
+            for (int i = 0; i < this.productCount; i++) {
                 this.products[i] = in.nextInt();
             }
 
@@ -105,8 +95,8 @@ public class DeliveryParser {
             for (int i = 0; i < this.warehouseCount; i++) {
                 tempX = in.nextInt();
                 tempY = in.nextInt();
-                tempInventory = new int[productTypes];
-                for (int j = 0; j < this.productTypes; j++) {
+                tempInventory = new int[productCount];
+                for (int j = 0; j < this.productCount; j++) {
                     tempInventory[j] = in.nextInt();
                 }
 
@@ -141,34 +131,64 @@ public class DeliveryParser {
             // file not found.
             System.out.printf("[ERROR] " + e.getMessage());
         }
+    }
 
-        int t[] = this.orders[179].items;
-        for (int i : t) {
-            System.out.print(", " + i);
+    /**
+     * Write output to filename.out
+     */
+    public void writeOutput() {
+        FileWriter out;
+        File outputFile = new File(this.fileName + ".out");
+
+        try {
+            out = new FileWriter(outputFile);
+            BufferedWriter bw = new BufferedWriter(out);
+
+            // print amount of commands
+            bw.write(String.valueOf(this.commandCounter));
+            bw.newLine();
+
+            // write output here
+            for (Drone drone : this.drones) {
+                for (String cmd : drone.cmds) {
+                    bw.write(cmd);
+                    bw.newLine();
+                }
+            }
+
+            bw.flush();
+            bw.close();
+
+        } catch (IOException e) {
+            // file not found.
+            System.out.printf("[ERROR] " + e.getMessage());
         }
+
+
     }
 
-    private int distance(Warehouse w, Order o) {
-        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
-        return (int) Math.ceil(distance);
+    /**
+     * Show some statistics in the console
+     */
+    public void writeStats() {
+        int processedOrders = 0;
+        for (Order o : this.orders) {
+            if (o.isDone) {processedOrders++;}
+        }
+
+        System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
+        System.out.println("Processed orders: " + processedOrders);
+        System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
     }
 
-    private int distance(Drone w, Order o) {
-        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
-        return (int) Math.ceil(distance);
-    }
 
-    private int distance(Warehouse w, Drone o) {
-        double distance = Math.sqrt(Math.pow((o.x - w.x), 2) + Math.pow(o.y - w.y, 2));
-        return (int) Math.ceil(distance);
-    }
 
     private Warehouse getClosestWarehouse(Order o) {
         Warehouse solution = this.warehouses[0];
         int distance = 0, currentDistance;
 
         for (Warehouse current : this.warehouses) {
-            currentDistance = distance(current, o);
+            currentDistance = current.distanceTo(o);
             if (distance == 0 || currentDistance < distance) {
 
                 // TODO: CHECK PRODUCT AVAILABILITY!
@@ -188,8 +208,8 @@ public class DeliveryParser {
         int distance = 0, currentDistance;
 
         for (Warehouse current : this.warehouses) {
-            if (hasProduct(current, prod)) {
-                currentDistance = distance(current, o);
+            if (current.hasProduct(prod)) {
+                currentDistance = current.distanceTo(o);
 
                 if (distance == 0 || currentDistance < distance) {
                     solution = current;
@@ -200,18 +220,6 @@ public class DeliveryParser {
 
         return solution;
     }
-
-
-    private boolean hasProduct(Warehouse w, int prod) {
-        if (w.inventory[prod] > 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-
-
 
     private void processOrder(Order order) {
         Drone drone = this.drones[processingDrone];
@@ -227,8 +235,8 @@ public class DeliveryParser {
                 continue;
             }
 
-            distToWarehouse = distance(closest, drone);
-            distToOrder = distance(closest, order);
+            distToWarehouse = closest.distanceTo(drone);
+            distToOrder = closest.distanceTo(order);
 
             while (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
                 if (processingDrone == this.drones.length - 1) {
@@ -237,8 +245,8 @@ public class DeliveryParser {
 
                 processingDrone++;
                 drone = this.drones[processingDrone];
-                distToWarehouse = distance(closest, drone);
-                distToOrder = distance(closest, order);
+                distToWarehouse = closest.distanceTo(drone);
+                distToOrder = closest.distanceTo(order);
             }
 
             drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
@@ -249,56 +257,4 @@ public class DeliveryParser {
 
         order.isDone = true;
     }
-
-//    private void processDrone(Drone drone) {
-//        Order order = this.orders[currentOrder];
-//        boolean currentDroneDone = false;
-//
-//        while (!doneFlag && !currentDroneDone) {
-//
-//
-//            while (order.isDone) {
-//                order = this.orders[++currentOrder];
-//            }
-//
-//            Warehouse closest = getClosestWarehouse(order);
-//            int distance = distance(closest, order);
-//
-//            int distToWarehouse = 0;
-//            int distToOrder = 0;
-//
-//            int t = 0;
-//            for (int product : order.items) {
-//                distToWarehouse = distance(closest, drone);
-//                distToOrder = distance(closest, order);
-//
-//                // skip delivered products
-//                if (product == -1) {
-//                    t++;
-//                    continue;
-//                }
-//
-//                if (drone.time - (distToWarehouse + 1 + distToOrder + 1) < 0) {
-//                    currentDroneDone = true;
-//                    break;
-//                }
-//
-//                drone.addLoadCommand(closest, product, 1, distToWarehouse, closest.x, closest.y);
-//                drone.addDeliverCommand(order, product, 1, distToOrder, order.x, order.y);
-//                this.commandCounter += 2;
-//                order.items[t] = -1;
-//                product = -1;
-//            }
-//
-//            boolean checkDone = true;
-//            for (int p : order.items) {
-//                if (p != -1) {checkDone = false;}
-//            }
-//
-//            order.isDone = checkDone;
-//            if (currentOrder == this.orderCount - 1 && checkDone == true) {
-//                doneFlag = true;
-//            }
-//        }
-//    }
 }

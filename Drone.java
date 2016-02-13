@@ -3,13 +3,12 @@ import java.util.ArrayList;
 /**
  * Created by eschmar on 11/02/16.
  */
-public class Drone {
+public class Drone extends Location {
     private static final char CMD_LOAD = 'L';
     private static final char CMD_DELIVER = 'D';
     private static final char CMD_WAIT = 'W';
     private static final char CMD_UNLOAD = 'U';
 
-    public int x,y;
     public int number, time, payload, maxPayload, loaded[];
     public ArrayList<String> cmds;
 
