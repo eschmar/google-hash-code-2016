@@ -17,7 +17,7 @@ public class DeliveryParser {
      */
     private int rows, cols, turns, maxPayload;
 
-    private int productCount;
+    private int productCount, productsNotInStock = 0;
     private int products[];
 
     private int warehouseCount;
@@ -176,7 +176,7 @@ public class DeliveryParser {
         for (Order o : this.orders) {
             if (o.isDone) {processedOrders++;}
         }
-
+        System.out.println("Products not in stock: " + productsNotInStock);
         System.out.println("\nParsed input file '" + this.fileName + this.fileExtension + "' and wrote output to '" + this.fileName + ".out'");
         System.out.println("Processed orders: " + processedOrders);
         System.out.println("Dimensions: " + this.rows + "x" + this.cols + ". Command count: " + this.commandCounter);
@@ -209,6 +209,11 @@ public class DeliveryParser {
 
             // find closest warehouse with product
             Warehouse warehouse = getClosestWarehouse(prodId, order);
+            if (warehouse == null) {
+                // no warehouse has this product in stock!
+                productsNotInStock++;
+                break;
+            }
 
             // create partial
             partial = new Stack<Integer>();
