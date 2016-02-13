@@ -239,10 +239,22 @@ public class DeliveryParser {
             }
 
             // find closest drone to warehouse
-            for (int i = 0; i < this.droneCount; i++) {
-                if (this.drones[i].canDeliver(warehouse, order, partial) && warehouse.distanceTo(this.drones[i]) < warehouse.distanceTo(this.drones[currentDrone])) {
-                    this.currentDrone = i;
-                }
+            //
+            // TODO: Improve choosing the drone
+            // Choosing the closest drone to the warehouse
+            // gave worse results sometimes. Why?
+            //
+            //for (int i = 0; i < this.droneCount; i++) {
+            //    if (this.drones[i].canDeliver(warehouse, order, partial) && warehouse.distanceTo(this.drones[i]) < warehouse.distanceTo(this.drones[currentDrone])) {
+            //        this.currentDrone = i;
+            //    }
+            //}
+
+            // find next available drone
+            int tries = droneCount;
+            while (tries > 0 && !this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
+                tries--;
+                this.alternateDrones();
             }
 
             if (!this.drones[currentDrone].canDeliver(warehouse, order, partial)) {
