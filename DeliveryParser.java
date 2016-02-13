@@ -172,17 +172,16 @@ public class DeliveryParser {
 
     }
 
-    /*
-    private boolean orderIsDone(Order order) {
-        boolean done = false;
-        for (int product : order.items) {
-            if (product > -1) {
-                done = true;
-            }
+
+    private boolean everythingDelivered(ArrayList<Package> list) {
+        boolean done = true;
+        for (Package pack : list) {
+            if (!pack.delivered)
+                done = false;
         }
         return done;
     }
-    */
+
 
     private void processOrder(Order order) {
         ArrayList<Package> itemPackages = new ArrayList();
@@ -219,8 +218,9 @@ public class DeliveryParser {
 
 
             for (Package pack : itemPackages) {
-                if (pack.hashCode == hashCode && (pack.weight + product.weight) <= maxPayload) {
+                if (pack.hashCode == hashCode && (pack.weight + product.weight) < maxPayload) {
                     pack.addItem(product);
+                    pack.weight += product.weight;
                     existsHash = true;
                     break;
                 }
@@ -232,30 +232,32 @@ public class DeliveryParser {
             }
         }
 
-        for (Package pack : itemPackages) {
-            Drone baseDrone = null;
-            Warehouse baseWarehouse = null;
-            int baseDistWD = 0;
-            int baseDistWO = 0;
+        while (!everythingDelivered(itemPackages)) {
+            for (Package pack : itemPackages) {
+                Drone baseDrone = null;
 
-            for (Item item : pack.items) {
-                baseDrone = item.bestDrone;
-                baseWarehouse = item.bestWarehouse;
-                baseDistWD = item.bestDistWD;
-                baseDistWO = item.bestDistWO;
-                item.bestDrone.addLoadCommand(item.bestWarehouse, item.itemCode, 1);
-                item.bestWarehouse.inventory[item.itemCode]--;
-                this.commandCounter++;
+                Warehouse baseWarehouse = null;
+                int baseDistWD = 0;
+                int baseDistWO = 0;
+
+                for (Item item : pack.items) {
+                    baseDrone = item.bestDrone;
+                    baseWarehouse = item.bestWarehouse;
+                    baseDistWD = item.bestDistWD;
+                    baseDistWO = item.bestDistWO;
+                    item.bestDrone.addLoadCommand(item.bestWarehouse, item.itemCode, 1);
+                    item.bestWarehouse.inventory[item.itemCode]--;
+                    this.commandCounter++;
+                }
+                baseDrone.changePos(baseDistWD, baseWarehouse.x, baseWarehouse.y);
+
+                for (Item item : pack.items) {
+                    item.bestDrone.addDeliverCommand(order, item.itemCode, 1);
+
+                }
+                baseDrone.changePos(baseDistWO, order.x, order.y);
             }
-            baseDrone.changePos(baseDistWD, baseWarehouse.x, baseWarehouse.y);
-
-            for (Item item : pack.items) {
-                item.bestDrone.addDeliverCommand(order, item.itemCode, 1);
-
-            }
-            baseDrone.changePos(baseDistWO, order.x, order.y);
         }
-
         order.isDone = true;
     }
 }

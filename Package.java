@@ -12,6 +12,7 @@ public class Package {
     public int hashCode;
     public int weight;
     public ArrayList<Item> items;
+    public boolean delivered;
 
     public Package(int id, int hashCode, Item item) {
         this.id = id;
@@ -19,6 +20,7 @@ public class Package {
         this.weight = 0;
         items = new ArrayList<>();
         items.add(item);
+        this.delivered = false;
     }
 
     public void addItem(Item item) {

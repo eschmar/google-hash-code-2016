@@ -16,6 +16,7 @@ public class Drone {
     public int x,y;
     public int number, time, payload, maxPayload, loaded[];
     public ArrayList<String> cmds;
+    public boolean busy;
 
     public Drone(Warehouse w, int number, int time, int maxPayload) {
         this.x = w.x;
@@ -25,6 +26,7 @@ public class Drone {
         this.payload = 0;
         this.maxPayload = maxPayload;
         this.cmds = new ArrayList<String>();
+        this.busy = false;
     }
 
     public void addLoadCommand(Warehouse w, int val1, int val2) {
