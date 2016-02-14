@@ -1,8 +1,11 @@
 /**
- * Created by eschmar on 11/02/16.
+ * Order
+ *
+ * Google HashCode 2016
+ * Created by Marcel Eschmann and Simone Stefani on 09/02/16.
  */
-public class Order {
-    public int number, x, y, amount, items[];
+public class Order extends Location {
+    public int number, amount, items[];
     boolean isDone;
 
     public Order(int number, int x, int y, int amount, int items[]) {
