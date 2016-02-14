@@ -5,7 +5,7 @@
  * Created by Marcel Eschmann and Simone Stefani on 09/02/16.
  */
 public class Order extends Location {
-    public int number, amount, items[];
+    public int number, amount, cluster, items[];
     boolean isDone;
 
     public Order(int number, int x, int y, int amount, int items[]) {
@@ -14,5 +14,6 @@ public class Order extends Location {
         this.y = y;
         this.amount = amount;
         this.items = items;
+        this.cluster = -1;
     }
 }

@@ -1,4 +1,7 @@
 import java.io.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Stack;
 
@@ -65,6 +68,16 @@ public class DeliveryParser {
      * Calculate simulation
      */
     public void run() {
+
+        /**
+         * Produce an array of clusters which groups the points according to proximity
+         */
+        int clustersNum = droneCount;
+        KMeansCl kMean =new KMeansCl(clustersNum,orderCount, cols -1, rows-1, orders);
+        kMean.setup();
+        kMean.computeClusters();
+        Cluster[] clusters = kMean.clusters.toArray(new Cluster[kMean.clusters.size()]);
+
         for (Order order : this.orders) {
             processOrder(order);
         }
