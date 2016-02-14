@@ -1,2 +1,2 @@
-# google-hash-code-2016
-Google Hash Code 2016 Online Qualification
+# Google Hash Code 2016
+Online Qualification submission for [Google Hash Code 2016](https://hashcode.withgoogle.com/).
